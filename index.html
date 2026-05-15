@@ -15,6 +15,8 @@
   --bg:#F6F3EC;--surface:#FFFFFF;--surface2:#F0ECE4;--surface3:#E8F1EA;
   --border:rgba(0,0,0,.08);--text:#1B1B18;--text2:#6B675E;--text3:#A7A197;
   --accent:#2F6F4E;--accent-bg:#E8F4EE;--accent-text:#1E4D35;
+  --mental:#2F7D52;--mental-bg:#E7F4EC;--mental-text:#1E5A38;
+  --physical:#356F8D;--physical-bg:#E6F1F6;--physical-text:#254F65;
   --amber:#B36A10;--amber-bg:#FFF3D9;--blue:#3C6478;--blue-bg:#E7F0F3;
   --danger:#B54737;--danger-bg:#F8E7E2;--r:12px;--r-sm:8px;
 }
@@ -22,6 +24,8 @@
   --bg:#141412;--surface:#1F1E1A;--surface2:#2A2822;--surface3:#203329;
   --border:rgba(255,255,255,.08);--text:#F1EEE7;--text2:#A29C92;--text3:#656058;
   --accent:#59B987;--accent-bg:#1C3A2D;--accent-text:#A9E5C4;
+  --mental:#68C98F;--mental-bg:#1D3929;--mental-text:#B5EBCB;
+  --physical:#8EC5DD;--physical-bg:#1D313A;--physical-text:#C1E4F1;
   --amber:#F4C76B;--amber-bg:#3A2D16;--blue:#8BB8C9;--blue-bg:#1D3038;
   --danger:#E57B6D;--danger-bg:#3B201C;
 }}
@@ -61,10 +65,13 @@ button{color:inherit}
 .track{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden}
 .fill{height:100%;border-radius:99px;background:var(--accent);transition:width .35s}
 .sec{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
-.habit{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.habit{display:flex;align-items:center;gap:12px;padding:11px 0 11px 10px;border-bottom:1px solid var(--border);border-left:3px solid transparent}
+.habit.mental{border-left-color:var(--mental)}
+.habit.physical{border-left-color:var(--physical)}
 .check{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;flex-shrink:0}
 .check svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:0}
-.habit.done .check{background:var(--accent);border-color:var(--accent);color:white}
+.habit.mental.done .check{background:var(--mental);border-color:var(--mental);color:white}
+.habit.physical.done .check{background:var(--physical);border-color:var(--physical);color:white}
 .habit.done .check svg{opacity:1}
 .habit-main{flex:1;min-width:0}
 .habit-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -91,6 +98,8 @@ button{color:inherit}
 .history-date{font-size:13px;font-weight:700}
 .settings-note{font-size:12px;color:var(--text3);line-height:1.55;margin-bottom:12px}
 .setting-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:9px}
+.setting-card.mental{border-left:3px solid var(--mental)}
+.setting-card.physical{border-left:3px solid var(--physical)}
 .setting-top{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:10px}
 .setting-name{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-weight:700}
 .icon-btn{background:transparent;border:none;color:var(--text3);font-size:18px;line-height:1;cursor:pointer;padding:7px;border-radius:6px}
@@ -100,7 +109,7 @@ button{color:inherit}
 .setting-controls input,.setting-controls select,.srow input,.srow select{width:100%;padding:8px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none}
 .srow{display:flex;align-items:center;gap:12px;background:var(--surface2);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)}
 .srow label{font-size:13px;color:var(--text2);flex:1}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:8px}
+.actions{display:grid;grid-template-columns:1fr;gap:10px;padding-top:8px}
 </style>
 </head>
 <body>
@@ -113,7 +122,7 @@ button{color:inherit}
 </svg>
 
 <div id="s-today" class="screen active">
-  <div class="topbar"><span class="topbar-icon">✓</span><h1>Daily Practice</h1><button class="tbtn primary" onclick="completeReady()">Check ready</button></div>
+  <div class="topbar"><span class="topbar-icon">✓</span><h1>Daily Practice</h1></div>
   <div class="daynav">
     <button class="daynav-btn" id="day-prev" onclick="changeDay(-1)">‹</button>
     <div><div class="daynav-label" id="day-label">Today</div><div class="daynav-sub" id="day-sub"></div></div>
@@ -167,7 +176,6 @@ button{color:inherit}
     <div id="activity-settings"></div>
     <div class="actions">
       <button class="btn" onclick="exportCSV()">Export CSV</button>
-      <button class="btn danger" onclick="clearData()">Clear logs</button>
     </div>
     <div id="export-status" class="settings-note" style="text-align:center;margin-top:10px"></div>
     <div class="sec" style="margin-top:22px">Timezone</div>
@@ -193,15 +201,15 @@ button{color:inherit}
 <script>
 const KEY='daily_practice_v1';
 const DEFAULTS=[
-  {id:'writing',name:'Writing',interval:1,enabled:true},
-  {id:'reading',name:'Reading',interval:1,enabled:true},
-  {id:'meditation',name:'Meditation',interval:1,enabled:true},
-  {id:'pushups',name:'Push-ups',interval:1,enabled:true},
-  {id:'situps',name:'Sit-ups',interval:1,enabled:true},
-  {id:'jumping-jacks',name:'Jumping jacks',interval:1,enabled:true},
-  {id:'walk',name:'Two-mile walk',interval:1,enabled:true},
-  {id:'core',name:'Core workout',interval:3,enabled:true},
-  {id:'strength',name:'Strength workout',interval:4,enabled:true}
+  {id:'writing',name:'Writing',interval:1,enabled:true,type:'mental'},
+  {id:'reading',name:'Reading',interval:1,enabled:true,type:'mental'},
+  {id:'meditation',name:'Meditation',interval:1,enabled:true,type:'mental'},
+  {id:'pushups',name:'Push-ups',interval:1,enabled:true,type:'physical'},
+  {id:'situps',name:'Sit-ups',interval:1,enabled:true,type:'physical'},
+  {id:'jumping-jacks',name:'Jumping jacks',interval:1,enabled:true,type:'physical'},
+  {id:'walk',name:'Two-mile walk',interval:1,enabled:true,type:'physical'},
+  {id:'core',name:'Core workout',interval:3,enabled:true,type:'physical'},
+  {id:'strength',name:'Strength workout',interval:4,enabled:true,type:'physical'}
 ];
 const TABS={today:'s-today',stats:'s-stats',settings:'s-settings'};
 const NAVS={today:'nav-today',stats:'nav-stats',settings:'nav-settings'};
@@ -217,6 +225,7 @@ function hydrate(){
     logs=data.logs||{};
     tz=data.tz||'America/Chicago';
   }catch(e){activities=cloneDefaults();logs={};tz='America/Chicago'}
+  activities=activities.map(a=>({...a,type:a.type||typeFor(a)}));
   document.getElementById('tz-select').value=tz;
 }
 function isoInTz(date,timezone){return date.toLocaleDateString('en-CA',{timeZone:timezone})}
@@ -232,7 +241,14 @@ function formatDateLabel(iso){
 function formatDateSub(iso){
   return iso===todayISO()?'':new Date(iso+'T12:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 }
-function activeActivities(){return activities.filter(a=>a.enabled!==false)}
+function typeFor(activity){
+  return ['writing','reading','meditation'].includes(activity.id)?'mental':'physical';
+}
+function typeRank(activity){return (activity.type||typeFor(activity))==='mental'?0:1}
+function sortActivities(list){
+  return [...list].sort((a,b)=>typeRank(a)-typeRank(b)||a.interval-b.interval||activities.indexOf(a)-activities.indexOf(b));
+}
+function activeActivities(){return sortActivities(activities.filter(a=>a.enabled!==false))}
 function doneOn(date,id){return !!(logs[date]&&logs[date][id])}
 function lastDoneBefore(id,date){
   return Object.keys(logs).filter(d=>d<date&&logs[d]&&logs[d][id]).sort().pop()||null;
@@ -250,6 +266,15 @@ function statusFor(activity,date){
 function dueActivities(date){return activeActivities().filter(a=>statusFor(a,date).ready)}
 function scoreFor(date){
   const due=dueActivities(date);
+  const done=due.filter(a=>doneOn(date,a.id)).length;
+  return {due:due.length,done,pct:due.length?Math.round(done/due.length*100):0};
+}
+function scoreForStats(date,days){
+  const index=days.indexOf(date);
+  const due=activeActivities().filter(a=>{
+    const interval=Math.max(1,parseInt(a.interval)||1);
+    return doneOn(date,a.id)||interval<=1||index%interval===0;
+  });
   const done=due.filter(a=>doneOn(date,a.id)).length;
   return {due:due.length,done,pct:due.length?Math.round(done/due.length*100):0};
 }
@@ -271,13 +296,6 @@ function toggleHabit(id,date=viewingDate){
   logs[date][id]=!logs[date][id];
   if(!logs[date][id])delete logs[date][id];
   if(!Object.keys(logs[date]).length)delete logs[date];
-  persist();renderToday();renderStats();
-}
-function completeReady(){
-  const ready=dueActivities(viewingDate).filter(a=>!doneOn(viewingDate,a.id));
-  if(!ready.length)return;
-  logs[viewingDate]=logs[viewingDate]||{};
-  ready.forEach(a=>logs[viewingDate][a.id]=true);
   persist();renderToday();renderStats();
 }
 function renderToday(){
@@ -306,9 +324,10 @@ function renderToday(){
 function rowHTML(item){
   const {a,s}=item,done=doneOn(viewingDate,a.id);
   const cadence=a.interval<=1?'Daily':`Every ${a.interval} days`;
-  return `<div class="habit ${done?'done':''}">
+  const type=a.type||typeFor(a);
+  return `<div class="habit ${type} ${done?'done':''}">
     <button class="check" onclick="toggleHabit('${a.id}')" aria-label="Toggle ${escapeHtml(a.name)}"><svg><use href="#ico-check"/></svg></button>
-    <div class="habit-main"><div class="habit-name">${escapeHtml(a.name)}</div><div class="habit-sub">${cadence}</div></div>
+    <div class="habit-main"><div class="habit-name">${escapeHtml(a.name)}</div><div class="habit-sub">${type==='mental'?'Mental':'Physical'} · ${cadence}</div></div>
     <span class="pill ${done?'done':s.kind}">${done?'Done':s.label}</span>
   </div>`;
 }
@@ -336,7 +355,7 @@ function periodDays(){
   return days.filter(d=>d<=todayISO());
 }
 function renderStats(){
-  const days=periodDays(),scores=days.map(d=>({date:d,...scoreFor(d)}));
+  const days=periodDays(),scores=days.map(d=>({date:d,...scoreForStats(d,days)}));
   const avg=scores.length?Math.round(scores.reduce((s,d)=>s+d.pct,0)/scores.length):0;
   const solid=scores.filter(d=>d.due&&d.pct===100).length;
   const best=scores.reduce((a,b)=>b.pct>a.pct?b:a,{pct:-1,date:null});
@@ -349,17 +368,22 @@ function renderStats(){
     return `<div class="col" onclick="jumpToDate('${d.date}')"><div class="${d.due?cls:'bar empty-bar'}" style="height:${Math.max(2,d.pct)}px"></div><span class="blbl">${label}</span></div>`;
   }).join('');
   document.getElementById('activity-stats').innerHTML=activeActivities().map(a=>{
-    const due=days.filter(d=>statusFor(a,d).ready);
-    const done=due.filter(d=>doneOn(d,a.id)).length;
-    const pct=due.length?Math.round(done/due.length*100):0;
-    return `<div class="avg-row"><span class="avg-label">${escapeHtml(a.name)}</span><span class="avg-value">${done}/${due.length} · ${pct}%</span></div>`;
+    const target=targetForPeriod(a,days);
+    const done=days.filter(d=>doneOn(d,a.id)).length;
+    const pct=target?Math.min(100,Math.round(done/target*100)):0;
+    return `<div class="avg-row"><span class="avg-label">${escapeHtml(a.name)}</span><span class="avg-value">${done}/${target} · ${pct}%</span></div>`;
   }).join('');
   const logged=scores.slice().reverse();
   document.getElementById('history-list').innerHTML=logged.map(d=>`<div class="history-row" onclick="jumpToDate('${d.date}')"><div><div class="history-date">${formatDateLabel(d.date)}</div><div class="history-sub">${d.done} of ${d.due} ready items</div></div><div class="history-score">${d.pct}% ›</div></div>`).join('');
 }
+function targetForPeriod(activity,days){
+  if(!days.length)return 0;
+  const interval=Math.max(1,parseInt(activity.interval)||1);
+  return interval<=1?days.length:Math.ceil(days.length/interval);
+}
 function renderSettings(){
   const box=document.getElementById('activity-settings');
-  box.innerHTML=activities.map((a,i)=>`<div class="setting-card">
+  box.innerHTML=activities.map((a,i)=>({a,i})).sort((x,y)=>typeRank(x.a)-typeRank(y.a)||x.a.interval-y.a.interval||x.i-y.i).map(({a,i})=>`<div class="setting-card ${a.type||typeFor(a)}">
     <div class="setting-top">
       <input class="setting-name" value="${escapeAttr(a.name)}" oninput="updateActivity(${i},'name',this.value)">
       <button class="icon-btn" onclick="removeActivity(${i})" aria-label="Remove">×</button>
@@ -368,6 +392,11 @@ function renderSettings(){
       <label>Cadence</label>
       <select onchange="updateActivity(${i},'interval',this.value)">
         ${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${a.interval==n?'selected':''}>${n===1?'Daily':`Every ${n} days`}</option>`).join('')}
+      </select>
+      <label>Type</label>
+      <select onchange="updateActivity(${i},'type',this.value)">
+        <option value="mental" ${(a.type||typeFor(a))==='mental'?'selected':''}>Mental</option>
+        <option value="physical" ${(a.type||typeFor(a))==='physical'?'selected':''}>Physical</option>
       </select>
       <label>Visible</label>
       <select onchange="updateActivity(${i},'enabled',this.value)">
@@ -380,11 +409,14 @@ function renderSettings(){
 function updateActivity(index,key,value){
   if(key==='interval')value=Math.max(1,parseInt(value)||1);
   if(key==='enabled')value=value==='true';
+  if(key==='type')value=value==='mental'?'mental':'physical';
   activities[index][key]=value;
-  persist();renderToday();renderStats();
+  persist();
+  if(key!=='name')renderSettings();
+  renderToday();renderStats();
 }
 function addActivity(){
-  activities.push({id:'activity-'+uid(),name:'New activity',interval:1,enabled:true});
+  activities.push({id:'activity-'+uid(),name:'New activity',interval:1,enabled:true,type:'mental'});
   persist();renderSettings();renderToday();
 }
 function removeActivity(index){
@@ -392,10 +424,6 @@ function removeActivity(index){
   activities.splice(index,1);persist();renderSettings();renderToday();renderStats();
 }
 function saveTz(){tz=document.getElementById('tz-select').value;viewingDate=todayISO();persist();renderToday();renderStats()}
-function clearData(){
-  if(!confirm('Clear all checkmarks? Your activity settings will stay.'))return;
-  logs={};persist();renderToday();renderStats();
-}
 function exportCSV(){
   const status=document.getElementById('export-status');
   const rows=['Date,Activity,Done'];
