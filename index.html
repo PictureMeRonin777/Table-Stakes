@@ -74,7 +74,10 @@ button{color:inherit}
 .habit.physical.done .check{background:var(--physical);border-color:var(--physical);color:white}
 .habit.done .check svg{opacity:1}
 .habit-main{flex:1;min-width:0}
-.habit-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.habit-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:7px}
+.type-dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+.type-dot.mental{background:var(--mental)}
+.type-dot.physical{background:var(--physical)}
 .habit-sub{font-size:11px;color:var(--text3);margin-top:2px}
 .pill{font-size:11px;font-weight:700;border-radius:99px;padding:4px 8px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);flex-shrink:0}
 .pill.ready{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
@@ -327,7 +330,7 @@ function rowHTML(item){
   const type=a.type||typeFor(a);
   return `<div class="habit ${type} ${done?'done':''}">
     <button class="check" onclick="toggleHabit('${a.id}')" aria-label="Toggle ${escapeHtml(a.name)}"><svg><use href="#ico-check"/></svg></button>
-    <div class="habit-main"><div class="habit-name">${escapeHtml(a.name)}</div><div class="habit-sub">${type==='mental'?'Mental':'Physical'} · ${cadence}</div></div>
+    <div class="habit-main"><div class="habit-name"><span class="type-dot ${type}"></span><span>${escapeHtml(a.name)}</span></div><div class="habit-sub">${type==='mental'?'Mental':'Physical'} · ${cadence}</div></div>
     <span class="pill ${done?'done':s.kind}">${done?'Done':s.label}</span>
   </div>`;
 }
@@ -383,9 +386,9 @@ function targetForPeriod(activity,days){
 }
 function renderSettings(){
   const box=document.getElementById('activity-settings');
-  box.innerHTML=activities.map((a,i)=>({a,i})).sort((x,y)=>typeRank(x.a)-typeRank(y.a)||x.a.interval-y.a.interval||x.i-y.i).map(({a,i})=>`<div class="setting-card ${a.type||typeFor(a)}">
+  box.innerHTML=activities.map((a,i)=>({a,i})).sort((x,y)=>typeRank(x.a)-typeRank(y.a)||x.a.interval-y.a.interval||x.i-y.i).map(({a,i})=>`<div class="setting-card ${a.type||typeFor(a)}" data-activity-id="${escapeAttr(a.id)}">
     <div class="setting-top">
-      <input class="setting-name" value="${escapeAttr(a.name)}" oninput="updateActivity(${i},'name',this.value)">
+      <input class="setting-name" data-activity-id="${escapeAttr(a.id)}" value="${escapeAttr(a.name)}" oninput="updateActivity(${i},'name',this.value)">
       <button class="icon-btn" onclick="removeActivity(${i})" aria-label="Remove">×</button>
     </div>
     <div class="setting-controls">
@@ -416,8 +419,21 @@ function updateActivity(index,key,value){
   renderToday();renderStats();
 }
 function addActivity(){
-  activities.push({id:'activity-'+uid(),name:'New activity',interval:1,enabled:true,type:'mental'});
+  const activity={id:'activity-'+uid(),name:'New activity',interval:1,enabled:true,type:'mental'};
+  activities.push(activity);
   persist();renderSettings();renderToday();
+  focusActivity(activity.id);
+}
+function focusActivity(id){
+  requestAnimationFrame(()=>{
+    const card=[...document.querySelectorAll('.setting-card')].find(el=>el.dataset.activityId===id);
+    const input=[...document.querySelectorAll('.setting-name')].find(el=>el.dataset.activityId===id);
+    if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
+    if(input){
+      input.focus({preventScroll:true});
+      input.select();
+    }
+  });
 }
 function removeActivity(index){
   if(!confirm(`Remove ${activities[index].name}? Its old checkmarks stay in the export but will not appear in the app.`))return;
